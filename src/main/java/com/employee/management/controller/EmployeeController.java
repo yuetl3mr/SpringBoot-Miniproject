@@ -1,10 +1,13 @@
 package com.employee.management.controller;
 
+import com.employee.management.dto.EmployeeRequest;
 import com.employee.management.entity.Department;
 import com.employee.management.entity.Employee;
+import com.employee.management.exception.ResourceNotFoundException;
 import com.employee.management.service.DepartmentService;
 import com.employee.management.service.EmployeeService;
 import com.employee.management.service.UtilityService;
+import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -12,7 +15,6 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/employees")
@@ -39,50 +41,41 @@ public class EmployeeController {
 
     @GetMapping("/{id}")
     public ResponseEntity<Employee> getEmployeeById(@PathVariable Long id) {
-        Optional<Employee> employee = employeeService.getEmployeeById(id);
-        return employee.map(ResponseEntity::ok)
-                .orElse(ResponseEntity.notFound().build());
+        Employee employee = employeeService.getEmployeeByIdOrThrow(id);
+        return ResponseEntity.ok(employee);
     }
 
     @PostMapping
-    public ResponseEntity<Employee> addEmployee(@RequestBody EmployeeRequest request) {
-        Optional<Department> department = departmentService.getDepartmentById(request.getDepartmentId());
-        if (department.isEmpty()) {
-            return ResponseEntity.badRequest().build();
-        }
+    public ResponseEntity<Employee> addEmployee(@Valid @RequestBody EmployeeRequest request) {
+        Department department = departmentService.getDepartmentById(request.getDepartmentId())
+                .orElseThrow(() -> new ResourceNotFoundException("Department not found with id: " + request.getDepartmentId()));
         
         Employee employee = new Employee();
         employee.setName(request.getName());
         employee.setEmail(request.getEmail());
-        employee.setDepartment(department.get());
+        employee.setDepartment(department);
         
         Employee savedEmployee = employeeService.saveEmployee(employee);
         return ResponseEntity.status(HttpStatus.CREATED).body(savedEmployee);
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<Employee> updateEmployee(@PathVariable Long id, @RequestBody EmployeeRequest request) {
-        Optional<Department> department = departmentService.getDepartmentById(request.getDepartmentId());
-        if (department.isEmpty()) {
-            return ResponseEntity.badRequest().build();
-        }
+    public ResponseEntity<Employee> updateEmployee(@PathVariable Long id, @Valid @RequestBody EmployeeRequest request) {
+        Department department = departmentService.getDepartmentById(request.getDepartmentId())
+                .orElseThrow(() -> new ResourceNotFoundException("Department not found with id: " + request.getDepartmentId()));
         
         Employee employee = new Employee();
         employee.setName(request.getName());
         employee.setEmail(request.getEmail());
-        employee.setDepartment(department.get());
+        employee.setDepartment(department);
         
-        try {
-            Employee updatedEmployee = employeeService.updateEmployee(id, employee);
-            return ResponseEntity.ok(updatedEmployee);
-        } catch (RuntimeException e) {
-            return ResponseEntity.notFound().build();
-        }
+        Employee updatedEmployee = employeeService.updateEmployee(id, employee);
+        return ResponseEntity.ok(updatedEmployee);
     }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteEmployee(@PathVariable Long id) {
-        employeeService.deleteEmployee(id);
+        employeeService.deleteEmployeeOrThrow(id);
         return ResponseEntity.noContent().build();
     }
 
@@ -105,35 +98,5 @@ public class EmployeeController {
     public String testEncoder(@RequestParam String password) {
         String encoded = passwordEncoder.encode(password);
         return "Encoded Password: " + encoded;
-    }
-
-    static class EmployeeRequest {
-        private String name;
-        private String email;
-        private Long departmentId;
-
-        public String getName() {
-            return name;
-        }
-
-        public void setName(String name) {
-            this.name = name;
-        }
-
-        public String getEmail() {
-            return email;
-        }
-
-        public void setEmail(String email) {
-            this.email = email;
-        }
-
-        public Long getDepartmentId() {
-            return departmentId;
-        }
-
-        public void setDepartmentId(Long departmentId) {
-            this.departmentId = departmentId;
-        }
     }
 }
