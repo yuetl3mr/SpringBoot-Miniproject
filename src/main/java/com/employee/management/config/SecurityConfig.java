@@ -27,10 +27,11 @@ public class SecurityConfig {
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/api/auth/**", "/hello", "/actuator/**").permitAll()
-                .requestMatchers("/employees/list", "/employees/search").permitAll()
+                .requestMatchers("/employees/list", "/employees/search", "/employees/statistics").permitAll()
                 .requestMatchers("/employees/add").hasRole("ADMIN")
                 .requestMatchers("/api/employees/search").hasAnyRole("USER", "ADMIN")
                 .requestMatchers("/api/employees").hasAnyRole("USER", "ADMIN")
+                .requestMatchers("/api/statistics/**").hasAnyRole("USER", "ADMIN")
                 .requestMatchers("/api/employees/**").hasRole("ADMIN")
                 .requestMatchers("/api/departments/**").hasRole("ADMIN")
                 .anyRequest().authenticated()

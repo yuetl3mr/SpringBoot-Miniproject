@@ -1,5 +1,6 @@
 package com.employee.management.service;
 
+import com.employee.management.dto.DepartmentStatistics;
 import com.employee.management.entity.Department;
 import com.employee.management.entity.Employee;
 import com.employee.management.exception.ResourceNotFoundException;
@@ -44,7 +45,6 @@ public class EmployeeService {
     public Optional<Employee> getEmployeeById(Long id) {
         return employeeRepository.findById(id);
     }
-
 
     public Employee getEmployeeByIdOrThrow(Long id) {
         return employeeRepository.findById(id)
@@ -103,5 +103,14 @@ public class EmployeeService {
     public Long getTotalEmployeeCount() {
         logger.debug("Calculating total employee count");
         return employeeRepository.count();
+    }
+
+    public List<DepartmentStatistics> getEmployeeCountByDepartment() {
+        logger.debug("Getting employee count by department");
+        return employeeRepository.getEmployeeCountByDepartment();
+    }
+
+    public Long getTotalEmployees() {
+        return employeeRepository.getTotalEmployeeCount();
     }
 }
