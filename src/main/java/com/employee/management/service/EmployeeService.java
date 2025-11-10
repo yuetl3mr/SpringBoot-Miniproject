@@ -1,40 +1,73 @@
 package com.employee.management.service;
 
-import com.employee.management.model.Employee;
+import com.employee.management.entity.Department;
+import com.employee.management.entity.Employee;
+import com.employee.management.repository.EmployeeRepository;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import java.util.concurrent.atomic.AtomicLong;
 
 @Service
+@Transactional
 public class EmployeeService {
 
-    private final List<Employee> employees = new ArrayList<>();
-    private final AtomicLong counter = new AtomicLong();
+    private final EmployeeRepository employeeRepository;
+    private final DepartmentService departmentService;
 
-    public EmployeeService() {
-        employees.add(new Employee(counter.incrementAndGet(), "Nguyen Van A", "nguyenvana@example.com", "IT"));
-        employees.add(new Employee(counter.incrementAndGet(), "Tran Thi B", "tranthib@example.com", "HR"));
-        employees.add(new Employee(counter.incrementAndGet(), "Le Van C", "levanc@example.com", "Finance"));
+    @Autowired
+    public EmployeeService(EmployeeRepository employeeRepository, DepartmentService departmentService) {
+        this.employeeRepository = employeeRepository;
+        this.departmentService = departmentService;
     }
 
     public List<Employee> getAllEmployees() {
-        return new ArrayList<>(employees);
+        return employeeRepository.findAll();
     }
 
-    public Employee addEmployee(Employee employee) {
-        employee.setId(counter.incrementAndGet());
-        employee.setCreatedAt(java.time.LocalDateTime.now());
-        employees.add(employee);
-        return employee;
+    public Employee saveEmployee(Employee employee) {
+        return employeeRepository.save(employee);
     }
 
     public Optional<Employee> getEmployeeById(Long id) {
-        return employees.stream()
-                .filter(emp -> emp.getId().equals(id))
-                .findFirst();
+        return employeeRepository.findById(id);
+    }
+
+    public void deleteEmployee(Long id) {
+        employeeRepository.deleteById(id);
+    }
+
+    public Employee updateEmployee(Long id, Employee employeeDetails) {
+        Employee employee = employeeRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Employee not found with id: " + id));
+        
+        employee.setName(employeeDetails.getName());
+        employee.setEmail(employeeDetails.getEmail());
+        if (employeeDetails.getDepartment() != null) {
+            employee.setDepartment(employeeDetails.getDepartment());
+        }
+        
+        return employeeRepository.save(employee);
+    }
+
+    public List<Employee> searchEmployeesByName(String name) {
+        return employeeRepository.findByNameContainingIgnoreCase(name);
+    }
+
+    public List<Employee> searchEmployeesByDepartment(String departmentName) {
+        return employeeRepository.findByDepartmentNameContaining(departmentName);
+    }
+
+    public List<Employee> searchEmployees(String name, String departmentName) {
+        if (name != null && !name.isEmpty() && departmentName != null && !departmentName.isEmpty()) {
+            return employeeRepository.findByNameOrDepartmentName(name, departmentName);
+        } else if (name != null && !name.isEmpty()) {
+            return employeeRepository.findByNameContainingIgnoreCase(name);
+        } else if (departmentName != null && !departmentName.isEmpty()) {
+            return employeeRepository.findByDepartmentNameContaining(departmentName);
+        }
+        return getAllEmployees();
     }
 }
-
