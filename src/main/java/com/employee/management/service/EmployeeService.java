@@ -2,6 +2,7 @@ package com.employee.management.service;
 
 import com.employee.management.entity.Department;
 import com.employee.management.entity.Employee;
+import com.employee.management.exception.ResourceNotFoundException;
 import com.employee.management.repository.EmployeeRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -35,13 +36,14 @@ public class EmployeeService {
         return employeeRepository.findById(id);
     }
 
-    public void deleteEmployee(Long id) {
-        employeeRepository.deleteById(id);
+
+    public Employee getEmployeeByIdOrThrow(Long id) {
+        return employeeRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Employee not found with id: " + id));
     }
 
     public Employee updateEmployee(Long id, Employee employeeDetails) {
-        Employee employee = employeeRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Employee not found with id: " + id));
+        Employee employee = getEmployeeByIdOrThrow(id);
         
         employee.setName(employeeDetails.getName());
         employee.setEmail(employeeDetails.getEmail());
@@ -50,6 +52,13 @@ public class EmployeeService {
         }
         
         return employeeRepository.save(employee);
+    }
+
+    public void deleteEmployeeOrThrow(Long id) {
+        if (!employeeRepository.existsById(id)) {
+            throw new ResourceNotFoundException("Employee not found with id: " + id);
+        }
+        employeeRepository.deleteById(id);
     }
 
     public List<Employee> searchEmployeesByName(String name) {
