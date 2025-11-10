@@ -99,4 +99,26 @@ public class EmployeeController {
         String encoded = passwordEncoder.encode(password);
         return "Encoded Password: " + encoded;
     }
+
+    @GetMapping("/count")
+    public ResponseEntity<EmployeeCountResponse> getEmployeeCount() {
+        Long count = employeeService.getTotalEmployeeCount();
+        return ResponseEntity.ok(new EmployeeCountResponse(count));
+    }
+
+    static class EmployeeCountResponse {
+        private Long totalEmployees;
+
+        public EmployeeCountResponse(Long totalEmployees) {
+            this.totalEmployees = totalEmployees;
+        }
+
+        public Long getTotalEmployees() {
+            return totalEmployees;
+        }
+
+        public void setTotalEmployees(Long totalEmployees) {
+            this.totalEmployees = totalEmployees;
+        }
+    }
 }

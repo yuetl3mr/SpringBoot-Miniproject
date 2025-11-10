@@ -7,6 +7,7 @@ import com.employee.management.repository.EmployeeRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -96,5 +97,11 @@ public class EmployeeService {
             return employeeRepository.findByDepartmentNameContaining(departmentName);
         }
         return getAllEmployees();
+    }
+
+    @Cacheable(value = "employeeCount", unless = "#result == null")
+    public Long getTotalEmployeeCount() {
+        logger.debug("Calculating total employee count");
+        return employeeRepository.count();
     }
 }
